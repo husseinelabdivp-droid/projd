@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 
 const STATUS_LABEL: Record<string, string> = {
   uploading: "Uploading",
@@ -40,18 +41,22 @@ export default async function ProjectsPage() {
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           {projects.map((p) => (
-            <Link
+            <div
               key={p.id}
-              href={`/projects/${p.id}`}
               className="rounded-lg border border-base-700 bg-base-900 p-4 hover:border-base-600"
             >
-              <div className="aspect-video rounded-md bg-base-800" />
-              <p className="mt-3 truncate font-medium">{p.name}</p>
-              <p className="mt-1 text-xs text-ink-500">
-                {STATUS_LABEL[p.status] ?? p.status}
-                {p.duration ? ` · ${Math.round(p.duration / 60)} min` : ""}
-              </p>
-            </Link>
+              <Link href={`/projects/${p.id}`}>
+                <div className="aspect-video rounded-md bg-base-800" />
+                <p className="mt-3 truncate font-medium">{p.name}</p>
+                <p className="mt-1 text-xs text-ink-500">
+                  {STATUS_LABEL[p.status] ?? p.status}
+                  {p.duration ? ` · ${Math.round(p.duration / 60)} min` : ""}
+                </p>
+              </Link>
+              <div className="mt-3">
+                <DeleteProjectButton projectId={p.id} />
+              </div>
+            </div>
           ))}
         </div>
       )}
