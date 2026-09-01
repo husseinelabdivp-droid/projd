@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 
 const PIPELINE_STAGES = [
   { key: "uploading", label: "Uploading" },
@@ -34,10 +35,15 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="px-8 py-8">
-      <h1 className="font-display text-2xl">{project.name}</h1>
-      <p className="mt-1 text-sm text-ink-500">
-        {project.content_type} · requested {project.requested_clip_count} clips
-      </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl">{project.name}</h1>
+          <p className="mt-1 text-sm text-ink-500">
+            {project.content_type} · requested {project.requested_clip_count} clips
+          </p>
+        </div>
+        <DeleteProjectButton projectId={project.id} />
+      </div>
 
       <div className="mt-8 rounded-lg border border-base-700 bg-base-900 p-6">
         <p className="text-sm font-medium">Pipeline status</p>
