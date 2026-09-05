@@ -54,7 +54,7 @@ export default async function ShortsPage() {
                   <span className="text-bronze-400">Viral score {Math.round(clip.score)}</span>
                 )}
                 {clip.output_url && (
-                  
+                  <a
                     href={clip.output_url}
                     download
                     className="text-ink-500 hover:text-ink-100"
