@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { listAllKeys, deleteKeys } from "@/lib/r2";
+import { deleteKeys, R2_PUBLIC_URL } from "@/lib/r2";
+
+function keyFromPublicUrl(url: string | null): string | null {
+  if (!url) return null;
+  const prefix = `${R2_PUBLIC_URL}/`;
+  return url.startsWith(prefix) ? url.slice(prefix.length) : null;
+}
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,24 +21,25 @@ export async function DELETE(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { data: project, error: fetchError } = await supabase
-    .from("projects")
-    .select("id, user_id")
+  const { data: clip, error: fetchError } = await supabase
+    .from("clips")
+    .select("id, output_url, thumbnail_url, projects(user_id)")
     .eq("id", params.id)
     .single();
 
-  if (fetchError || !project || project.user_id !== user.id) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  const ownerId = (clip as any)?.projects?.user_id;
+  if (fetchError || !clip || ownerId !== user.id) {
+    return NextResponse.json({ error: "Clip not found" }, { status: 404 });
   }
 
-  const videoKeys = await listAllKeys(`videos/${user.id}/${project.id}/`);
-  const clipKeys = await listAllKeys(`clips/${user.id}/${project.id}/`);
-  await deleteKeys([...videoKeys, ...clipKeys]);
+  const keys = [keyFromPublicUrl(clip.output_url), keyFromPublicUrl(clip.thumbnail_url)].filter(
+    (k): k is string => Boolean(k)
+  );
+  if (keys.length > 0) {
+    await deleteKeys(keys);
+  }
 
-  const { error: deleteError } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", project.id);
+  const { error: deleteError } = await supabase.from("clips").delete().eq("id", clip.id);
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
