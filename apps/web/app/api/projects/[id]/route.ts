@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { listAllKeys, deleteKeys } from "@/lib/r2";
 
 export async function DELETE(
   request: Request,
@@ -25,13 +26,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const folderPath = `${user.id}/${project.id}`;
-  const { data: files } = await supabase.storage.from("videos").list(folderPath);
-
-  if (files && files.length > 0) {
-    const paths = files.map((f) => `${folderPath}/${f.name}`);
-    await supabase.storage.from("videos").remove(paths);
-  }
+  const videoKeys = await listAllKeys(`videos/${user.id}/${project.id}/`);
+  const clipKeys = await listAllKeys(`clips/${user.id}/${project.id}/`);
+  await deleteKeys([...videoKeys, ...clipKeys]);
 
   const { error: deleteError } = await supabase
     .from("projects")
