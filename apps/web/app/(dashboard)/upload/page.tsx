@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { ALLOWED_VIDEO_TYPES, MAX_UPLOAD_BYTES } from "@/lib/validation/project";
 
 type Step = "select" | "options" | "uploading" | "error";
@@ -18,9 +17,30 @@ const CONTENT_TYPES = [
 
 const CLIP_COUNTS = [3, 5, 10, 20] as const;
 
+function uploadWithProgress(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`Upload failed with status ${xhr.status}`));
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(file);
+  });
+}
+
 export default function UploadPage() {
   const router = useRouter();
-  const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("select");
@@ -75,15 +95,9 @@ export default function UploadPage() {
       const createData = await createRes.json();
       if (!createRes.ok) throw new Error(createData.error ?? "Failed to start upload");
 
-      const { projectId, storagePath, token } = createData;
+      const { projectId, storagePath, signedUrl } = createData;
 
-      const { error: uploadError } = await supabase.storage
-        .from("videos")
-        .uploadToSignedUrl(storagePath, token, file);
-
-      if (uploadError) throw new Error(uploadError.message);
-
-      setProgress(100);
+      await uploadWithProgress(signedUrl, file, file.type, setProgress);
 
       const generateRes = await fetch(`/api/projects/${projectId}/generate`, {
         method: "POST",
