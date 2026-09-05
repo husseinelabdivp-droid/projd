@@ -52,13 +52,7 @@ export default async function ShortsPage() {
                 )}
                 <div className="flex items-center gap-2">
                   {clip.output_url && (
-                    
-                      href={clip.output_url}
-                      download
-                      className="text-ink-500 hover:text-ink-100"
-                    >
-                      Download
-                    </a>
+                    <a href={clip.output_url} download className="text-ink-500 hover:text-ink-100">Download</a>
                   )}
                   <DeleteClipButton clipId={clip.id} />
                 </div>
