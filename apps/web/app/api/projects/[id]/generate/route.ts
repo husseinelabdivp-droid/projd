@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { publicUrlFor } from "@/lib/r2";
 
 export async function POST(
   request: Request,
@@ -48,14 +49,10 @@ export async function POST(
     return NextResponse.json({ error: "Not enough credits" }, { status: 402 });
   }
 
-  const { data: publicUrlData } = supabase.storage
-    .from("videos")
-    .getPublicUrl(storagePath);
-
   const { error: updateError } = await supabase
     .from("projects")
     .update({
-      original_video_url: publicUrlData.publicUrl,
+      original_video_url: publicUrlFor(storagePath),
       status: "processing",
     })
     .eq("id", project.id);
