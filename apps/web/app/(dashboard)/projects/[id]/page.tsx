@@ -96,10 +96,23 @@ export default async function ProjectDetailPage({
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           {clips.map((clip) => (
             <div key={clip.id} className="rounded-lg border border-base-700 bg-base-900 p-4">
-              <div className="aspect-[9/16] rounded-md bg-base-800" />
+              <div className="aspect-[9/16] overflow-hidden rounded-md bg-base-800">
+                {clip.output_url ? (
+                  <video
+                    src={clip.output_url}
+                    poster={clip.thumbnail_url ?? undefined}
+                    controls
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-ink-700">
+                    {clip.status === "rendering" ? "Rendering…" : "No preview yet"}
+                  </div>
+                )}
+              </div>
               <p className="mt-3 truncate font-medium">{clip.title ?? "Untitled clip"}</p>
               {clip.score != null && (
-                <p className="mt-1 text-xs text-bronze-400">Viral score {clip.score}</p>
+                <p className="mt-1 text-xs text-bronze-400">Viral score {Math.round(clip.score)}</p>
               )}
             </div>
           ))}
