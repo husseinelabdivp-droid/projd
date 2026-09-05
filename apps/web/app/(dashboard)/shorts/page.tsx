@@ -1,25 +1,22 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteClipButton } from "@/components/dashboard/delete-clip-button";
 
 export default async function ShortsPage() {
   const supabase = createClient();
-
   const { data: clips, error } = await supabase
     .from("clips")
     .select("*, projects(id, name)")
     .order("created_at", { ascending: false });
-
   return (
     <div className="px-8 py-8">
       <h1 className="font-display text-2xl">Shorts</h1>
       <p className="mt-1 text-sm text-ink-500">
         Every clip generated across your projects.
       </p>
-
       {error && (
         <p className="mt-6 text-sm text-signal-red">{error.message}</p>
       )}
-
       {!clips || clips.length === 0 ? (
         <div className="mt-8 rounded-lg border border-dashed border-base-600 px-6 py-16 text-center">
           <p className="text-ink-500">No Shorts yet.</p>
@@ -53,15 +50,18 @@ export default async function ShortsPage() {
                 {clip.score != null && (
                   <span className="text-bronze-400">Viral score {Math.round(clip.score)}</span>
                 )}
-                {clip.output_url && (
-                  <a
-                    href={clip.output_url}
-                    download
-                    className="text-ink-500 hover:text-ink-100"
-                  >
-                    Download
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  {clip.output_url && (
+                    
+                      href={clip.output_url}
+                      download
+                      className="text-ink-500 hover:text-ink-100"
+                    >
+                      Download
+                    </a>
+                  )}
+                  <DeleteClipButton clipId={clip.id} />
+                </div>
               </div>
             </div>
           ))}
