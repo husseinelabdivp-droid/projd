@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createProjectSchema } from "@/lib/validation/project";
+import { getSignedUploadUrl } from "@/lib/r2";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -58,16 +59,15 @@ export async function POST(request: Request) {
   }
 
   const extension = fileName.split(".").pop() ?? "mp4";
-  const storagePath = `${user.id}/${project.id}/original.${extension}`;
+  const storagePath = `videos/${user.id}/${project.id}/original.${extension}`;
 
-  const { data: signed, error: signedError } = await supabase.storage
-    .from("videos")
-    .createSignedUploadUrl(storagePath);
-
-  if (signedError || !signed) {
+  let signedUrl: string;
+  try {
+    signedUrl = await getSignedUploadUrl(storagePath, fileType);
+  } catch (err) {
     await supabase.from("projects").delete().eq("id", project.id);
     return NextResponse.json(
-      { error: signedError?.message ?? "Failed to create upload URL" },
+      { error: err instanceof Error ? err.message : "Failed to create upload URL" },
       { status: 500 }
     );
   }
@@ -75,9 +75,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     projectId: project.id,
     storagePath,
-    signedUrl: signed.signedUrl,
-    token: signed.token,
-    fileType,
+    signedUrl,
   });
 }
 
